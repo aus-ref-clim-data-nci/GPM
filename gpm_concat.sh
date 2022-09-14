@@ -23,10 +23,10 @@
 # with filenames 3B-HHR.MS.MRG.3IMERG.V06B_${yr}${mn}.nc
 #
 # To run the script ./gpm_concat.sh
-# A record of updates is kept in /g/data/ia39/aus-ref-clim-data-nci/gpm/code/update_log.txt
+# A record of updates is kept in /g/data/ia39/aus-ref-clim-data-nci/gpm/code/concat_log.txt
 #
 # Last change:
-# 2022-09-13
+# 2022-09-14
 #
 
 module load nco
@@ -71,4 +71,4 @@ for day in $(seq -w 01 $last); do
 done
 
 # record in log
-echo "${today} year-mn ${yr}-${mn} data concatenated by $USER" >> ${code_dir}/update_log1.txt
+echo "${today} year-mn ${yr}-${mn} data concatenated by $USER" >> ${code_dir}/concat_log.txt
