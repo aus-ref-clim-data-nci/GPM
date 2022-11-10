@@ -211,7 +211,6 @@ def main():
     if args["debug"]:
         level = "debug"
     data_log = set_log('gpmlog', flog, level)
-    data_log.info(f"Updated on {today} by {sys_user}")
     # read year as external argument and move to data directory
     try:
         os.chdir(f"{data_dir}/{yr}")
@@ -221,6 +220,7 @@ def main():
     session = open_session(user, pwd)
     status = download_yr(session, http_url, yr, data_dir, days, data_log)
 
+    data_log.info(f"Updated on {today} by {sys_user}")
     print_summary(status['updated'], status['new'],
                   status['error'], data_log)
 if __name__ == "__main__":

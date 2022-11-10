@@ -41,6 +41,7 @@ ncks --cnk_dmn time,48 --cnk_dmn lat,600 --cnk_dmn lon,600 tmp.nc 3B-HHR.MS.MRG.
 ```
 
 A record of updates is kept in `update_log.txt` for downloads and a separate log `concat_log.txt` for the concatenation step.
+We are only keeping the current year original files. The last modified dates for the original files are recorded in original/mod_date_<year>.txt files.
 
 ## Data location
 

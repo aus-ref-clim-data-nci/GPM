@@ -46,7 +46,7 @@ mkdir -p $outdir
 cd $tmpdir
 
 # before proceeding save a list of filenames + modified date in file
-fout="${code_dir}/mod_date_${yr}.txt"
+fout="${code_dir}/original/mod_date_${yr}.txt"
 for f in $(ls 3B-HHR.MS.MRG.3IMERG.${yr}${mn}*); do
     echo "${f} $(date -r ${f} +'%Y-%m-%d')" >> $fout
 done
@@ -55,19 +55,23 @@ done
 last=$(date --date="${yr}/${mn}/1 + 1 month day ago" "+%d")
 # concatenate each day using cdo
 # set netcdf4 classic with compression level 5 and shuffle
-#last=01
 for day in $(seq -w 01 $last); do
     fpath="${outdir}/3B-HHR.MS.MRG.3IMERG.V06B_${yr}${mn}${day}.nc"
-    cdo --silent --no_warnings --no_history -L -s -f nc4c -z zip_4 cat 3B-HHR.MS.MRG.3IMERG.${yr}${mn}${day}*.nc tmp.nc
-    ncks --cnk_dmn time,48 --cnk_dmn lat,600 --cnk_dmn lon,600 tmp.nc ${fpath} 
-    rm tmp.nc
+    # first check if file already exists
+    if [ -f "$fpath" ]; then
+        echo "$fpath exists already skipping"
+    else 
+        cdo --silent --no_warnings --no_history -L -s -f nc4c -z zip_4 cat 3B-HHR.MS.MRG.3IMERG.${yr}${mn}${day}*.nc tmp.nc
+        ncks --cnk_dmn time,48 --cnk_dmn lat,600 --cnk_dmn lon,600 tmp.nc ${fpath} 
+        rm tmp.nc
 # rewrite history attribute
-    hist="downloaded original files from 
-      https://gpm1.gesdisc.eosdis.nasa.gov/opendap/hyrax/GPM_L3/GPM_3IMERGHH.06
-      Using cdo to concatenate files, and nco to modify chunks: 
-      cdo --silent --no_warnings --no_history -L -s -f nc4c -z zip_4 cat 3B-HHR.MS.MRG.3IMERG.${yr}${mn}${day}*.nc tmp.nc
-      ncks --cnk_dmn time,48 --cnk_dmn lat,600 --cnk_dmn lon,600 tmp.nc ${fpath}" 
-    ncatted -h -O -a history,global,o,c,"$hist" ${fpath}
+        hist="downloaded original files from 
+          https://gpm1.gesdisc.eosdis.nasa.gov/opendap/hyrax/GPM_L3/GPM_3IMERGHH.06
+          Using cdo to concatenate files, and nco to modify chunks: 
+          cdo --silent --no_warnings --no_history -L -s -f nc4c -z zip_4 cat 3B-HHR.MS.MRG.3IMERG.${yr}${mn}${day}*.nc tmp.nc
+          ncks --cnk_dmn time,48 --cnk_dmn lat,600 --cnk_dmn lon,600 tmp.nc ${fpath}" 
+        ncatted -h -O -a history,global,o,c,"$hist" ${fpath}
+    fi
 done
 
 # record in log
