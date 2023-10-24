@@ -1,0 +1,64 @@
+# Created by Sam Green CLEX/UNSW, contact: sam.green@unsw.edu.au
+
+# This script/action is to download 3hr V06B_early GPM data from gpm1.gesdisc.eosdis.nasa.gov.
+# I needed to follow https://disc.gsfc.nasa.gov/information/howto?title=How%20to%20Generate%20Earthdata%20Prerequisite%20Files 
+# to set-up the prerequisite files to be able to download the data.
+
+# This downloads the full day's data from 2 days from the date the script is run.
+
+name: Run GPM download code 
+on: 
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'
+
+jobs:
+  runcode:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run  
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{secrets.HOST}}
+          username: ${{secrets.USER_S}}
+          key: ${{secrets.SSH_KEY_S}}
+          command_timeout: 60m
+          script: |
+              module use /g/data3/hh5/public/modules
+              module load conda/analysis3
+
+              # Get the current year:
+              yr=$(date +'%Y')
+              
+              # Get the day number from 2 days ago (to make sure the data is actually on the server):
+              day_no=$(($(date +%j)-2))
+              
+              # Check if the directory for /$yr/$day_no/ exists and create it if it doesn't
+              # Then cd into that directory
+              directory="/g/data/ia39/aus-ref-clim-data-nci/gpm/data/V06B_early/tmp/"
+              
+              if [ -d "$directory/$yr/$day_no" ]; then
+                  cd "$directory/$yr/$day_no" || exit 1
+              else
+                  mkdir -p "$directory/$yr/$day_no" || exit 1
+                  cd "$directory/$yr/$day_no" || exit 1
+              fi
+              
+              # Use wget to download all the HDF5 files in a directory
+              # The current year and the day number from 2 days ago are used to select the directory
+              
+              wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --keep-session-cookies -r -c -nH -nd -np -A HDF5 -nc --content-disposition "https://gpm1.gesdisc.eosdis.nasa.gov/data/GPM_L3/GPM_3IMERGHHE.06/$yr/$day_no/"
+
+# wget options used:
+# --load-cookies ~/.urs_cookies: This option tells wget to load cookies from the file ~/.urs_cookies before beginning any download process. It's used when the server you are connecting to uses cookies for session management.
+# --save-cookies ~/.urs_cookies: This option tells wget to save any cookies it receives during the download session to ~/.urs_cookies. It's useful if you want to continue using these cookies in later sessions.
+# --keep-session-cookies: Typically wget discards session cookies as they are meant to last only for single session. This option however tells wget to save session cookies as if they are permanent cookies.
+
+# -r or --recursive: This option tells wget to download files recursively. It will also follow any links within the directory of the given URL and download them too.
+# -c or --continue: This option is used to resume broken downloads, if possible. If the file was partially downloaded already, it tries to continue downloading from the point it stopped instead of starting a fresh download.
+# -nH or --no-host-directories: This option is used when you don't want to create a directory hierarchy for the host/domain name when downloading files.
+# -nd or --no-directories: This option tells wget not to create a hierarchy of directories when downloading. It downloads all the files into your current directory.
+# -np or --no-parent: This option tells wget not to retrieve files that reside above the hierarchy of the starting directory. Useful for limiting the download to a specific directory tree.
+# -A HDF5: -A means accept. The wget command with this option downloads only the files with extension "HDF5". Files with other extensions are avoided.
+# -nc or --no-clobber: This option helps in skipping downloads that would download to existing files.
+# --content-disposition: This option instructs wget to respect the Content-Disposition header possibly sent by the remote HTTP server. This header is a hint to the client to present the file being sent in a particular way - as an attachment or inline. Some websites use it to indicate the original name of the file.
