@@ -26,7 +26,7 @@ jobs:
           command_timeout: 60m
           script: |
               # The year to download:
-              yr=2022
+              yr=$(date +'%Y')
               
               # The URL, base directory, and step size
               url=https://gpm1.gesdisc.eosdis.nasa.gov/opendap/GPM_L3/GPM_3IMERGHH.07
@@ -53,7 +53,7 @@ jobs:
                   local start_time=$2
                   local end_time=$3
                   local index=$(printf "%04d" $((30*($4-1))))
-                  local dt=$(date -d "01/01 +$day days -1 day" "+%m%d")
+                  local dt=$(date -d "01/01/%yr +$day days -1 day" "+%m%d")
                   wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --keep-session-cookies -c -nc $url/$yr/$day/3B-HHR.MS.MRG.3IMERG.$yr$dt-S${start_time}-E${end_time}.$index.V07A.HDF5.nc4 >> $yr_$day.log 2>&1
               }
               
