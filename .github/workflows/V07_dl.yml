@@ -21,8 +21,9 @@ jobs:
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{secrets.HOST}}
-          username: ${{secrets.USER_S}}
-          key: ${{secrets.SSH_KEY_S}}
+          username: ${{secrets.USER}}
+          key: ${{secrets.SSH_KEY}}
+          passphrase: ${{secrets.PASSPHRASE}}
           command_timeout: 60m
           script: |
               # The year to download:
