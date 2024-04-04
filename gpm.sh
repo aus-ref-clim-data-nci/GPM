@@ -61,7 +61,7 @@ download_file() {
 total_days=$(is_leap_year "$yr" && echo "366" || echo "365")
               
 # Main loop to combine everything:
-for ((i=1; i<=$total_days; i++)); do
+for ((i=200; i<=$total_days; i++)); do
   # change day from 1 to 001 to match url directory:
   ii=$(printf "%03d" $i)
   # Check if the directory exists, create it if not, and then cd into it:
