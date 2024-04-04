@@ -1,7 +1,9 @@
 #!/bin/bash -l
 # Copyright 2021 ARC Centre of Excellence for Climate Extremes
 #
-# author: Paola Petrelli <paola.petrelli@utas.edu.au>
+# authors: 
+# Sam Green <sam.green@unsw.edu.au>
+# Paola Petrelli <paola.petrelli@utas.edu.au>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,56 +25,66 @@
 # with filenames 3B-HHR.MS.MRG.3IMERG.V06B_${yr}${mn}.nc
 #
 # To run the script ./gpm_concat.sh
+# The script can also be run in parallel when submitting a job to Gadi
 # A record of updates is kept in /g/data/ia39/aus-ref-clim-data-nci/gpm/code/concat_log.txt
 #
-# Last change:
-# 2022-09-14
+# Date created: 02-11-2023
 #
 
+module load parallel
 module load nco
 module load cdo
 
-yr=$1
-mn=$2
-today=$(date "+%Y-%m-%d")
-# set directories
-root_dir=${AUSREFDIR:-/g/data/ia39/aus-ref-clim-data-nci}
-data_dir="${root_dir}/gpm/data"
-code_dir="${root_dir}/gpm/code"
-tmpdir="${data_dir}/tmp/${yr}" 
-outdir="${data_dir}/V06B/${yr}"
-mkdir -p $outdir
-# run nco from temporary location
-cd $tmpdir
+yr=2023
+total_days=$(is_leap_year "$yr" && echo "366" || echo "365")
+#total_days=356
 
-# before proceeding save a list of filenames + modified date in file
-fout="${code_dir}/original/mod_date_${yr}.txt"
-for f in $(ls 3B-HHR.MS.MRG.3IMERG.${yr}${mn}*); do
-    echo "${f} $(date -r ${f} +'%Y-%m-%d')" >> $fout
-done
-# to get the last day of the month
-# set ${yr}/${mn}/01 add a month, remove 1 day and pass to date function
-last=$(date --date="${yr}/${mn}/1 + 1 month day ago" "+%d")
-# concatenate each day using cdo
-# set netcdf4 classic with compression level 5 and shuffle
-for day in $(seq -w 01 $last); do
-    fpath="${outdir}/3B-HHR.MS.MRG.3IMERG.V06B_${yr}${mn}${day}.nc"
-    # first check if file already exists
-    if [ -f "$fpath" ]; then
-        echo "$fpath exists already skipping"
-    else 
-        cdo --silent --no_warnings --no_history -L -s -f nc4c -z zip_4 cat 3B-HHR.MS.MRG.3IMERG.${yr}${mn}${day}*.nc tmp.nc
-        ncks --cnk_dmn time,48 --cnk_dmn lat,600 --cnk_dmn lon,600 tmp.nc ${fpath} 
-        rm tmp.nc
-# rewrite history attribute
-        hist="downloaded original files from 
-          https://gpm1.gesdisc.eosdis.nasa.gov/opendap/hyrax/GPM_L3/GPM_3IMERGHH.06
-          Using cdo to concatenate files, and nco to modify chunks: 
-          cdo --silent --no_warnings --no_history -L -s -f nc4c -z zip_4 cat 3B-HHR.MS.MRG.3IMERG.${yr}${mn}${day}*.nc tmp.nc
-          ncks --cnk_dmn time,48 --cnk_dmn lat,600 --cnk_dmn lon,600 tmp.nc ${fpath}" 
-        ncatted -h -O -a history,global,o,c,"$hist" ${fpath}
+execute_tasks () {
+    i=$1
+
+    root_dir="/g/data/ia39/aus-ref-clim-data-nci/gpm/data/"
+    outdir="$root_dir/V07/$yr/"
+
+    if [ -d "$outdir" ]; then
+        echo "Directory $outdir exists."
+    else
+        echo "Directory $outdir does not exist. Creating now..."
+        mkdir -p "$outdir" || { echo "Failed to create directory $outdir" >&2; exit 1; }
     fi
-done
 
-# record in log
-echo "${today} year-mn ${yr}-${mn} data concatenated by $USER" >> ${code_dir}/concat_log.txt
+    ii=$(printf "%03d" $i)
+    dt=$(date -d "01/01/$yr +$i days -1 day" "+%Y%m%d")
+
+    tmpdir="$root_dir/tmp/$yr/$ii/"
+    f_in=$tmpdir/3B-HHR.MS.MRG.3IMERG.*.V07B.HDF5.nc4
+    f_out=$outdir/3B-HHR.MS.MRG.3IMERG.$dt.V07B.nc
+
+    if [ -f "$f_out" ]; then
+        echo "$f_out exists already skipping"
+    else 
+        echo "Concatenating day $i in year $yr"
+        # Concatenate all files from a day together, save as a tmp.nc file
+        cdo --silent --no_warnings --no_history -L -s -f nc4c -z zip_4 cat $f_in $outdir/tmp_$i.nc
+        # Re-chunk the tmp.nc file
+        echo "Concatenating complete, now re-chunking...."
+        ncks --cnk_dmn time,48 --cnk_dmn lat,600 --cnk_dmn lon,600 $outdir/tmp_$i.nc $f_out
+        rm $outdir/tmp_$i.nc
+        # rewrite history attribute
+        hist="downloaded original files from 
+            https://gpm1.gesdisc.eosdis.nasa.gov/opendap/GPM_L3/GPM_3IMERGHH.07
+            Using cdo to concatenate files, and nco to modify chunks: 
+            cdo --silent --no_warnings --no_history -L -s -f nc4c -z zip_4 cat $f_in $outdir/tmp_$i.nc
+            ncks --cnk_dmn time,48 --cnk_dmn lat,600 --cnk_dmn lon,600 tmp.nc $f_out"
+        # Add what we've done into the history attribute in the file. 
+        ncatted -h -O -a history,global,o,c,"$hist" ${f_out}
+    fi
+}
+
+export yr
+export -f execute_tasks
+
+# Run the code in parallel for an pbs job:
+#seq $total_days | parallel -j 48 execute_tasks {}
+
+# Run the code in serial
+execute_tasks $total_days
