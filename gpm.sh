@@ -26,7 +26,7 @@
 # To run the script ./gpm.sh
 
 # The year to download:
-yr=$(date +'%Y')
+yr=$1
               
 # The URL, base directory, and step size
 url=https://gpm1.gesdisc.eosdis.nasa.gov/opendap/GPM_L3/GPM_3IMERGHH.07
@@ -81,3 +81,11 @@ for ((i=1; i<=$total_days; i++)); do
     #echo "${time_pair[1]}"
   done
 done
+
+# wget options used:
+# --load-cookies ~/.urs_cookies: This option tells wget to load cookies from the file ~/.urs_cookies before beginning any download process. It's used when the server you are connecting to uses cookies for session management.
+# --save-cookies ~/.urs_cookies: This option tells wget to save any cookies it receives during the download session to ~/.urs_cookies. It's useful if you want to continue using these cookies in later sessions.
+# --keep-session-cookies: Typically wget discards session cookies as they are meant to last only for single session. This option however tells wget to save session cookies as if they are permanent cookies.
+
+# -c or --continue: This option is used to resume broken downloads, if possible. If the file was partially downloaded already, it tries to continue downloading from the point it stopped instead of starting a fresh download.
+# -nc or --no-clobber: This option helps in skipping downloads that would download to existing files.
