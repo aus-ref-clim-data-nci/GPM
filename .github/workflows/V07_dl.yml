@@ -24,6 +24,7 @@ jobs:
           passphrase: ${{secrets.PASSPHRASE}}
           command_timeout: 60m
           script: |
-              yr=$(date +'%Y')
+              #yr=$(date +'%Y')
+              yr=2023
               cd /g/data/ia39/aus-ref-clim-data-nci/gpm/code
               bash gpm.sh yr
