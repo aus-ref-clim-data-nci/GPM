@@ -1,5 +1,7 @@
 # GPM IMERG
-  
+
+![workflow](https://github.com/aus-ref-clim-data-nci/GPM/actions/workflows/V07_dl.yml/badge.svg)
+
 ## Overview
 
 GPM IMERG Final Precipitation L3 Half Hourly 0.1 degree x 0.1 degree V06
