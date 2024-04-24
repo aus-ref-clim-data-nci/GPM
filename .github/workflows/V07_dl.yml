@@ -27,4 +27,4 @@ jobs:
               #yr=$(date +'%Y')
               yr=2023
               cd /g/data/ia39/aus-ref-clim-data-nci/gpm/code
-              bash gpm.sh yr
+              bash gpm.sh $yr
